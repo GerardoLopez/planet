@@ -3,10 +3,65 @@
 from .utils import *
 
 import gdal
+from osgeo import gdal_array
+
+class Output():
+    """
+    Class to handle output operations
+    """
+    def __init__(self, output_filename, array,
+                       geotransform, projection):
+        """
+        Class constructor
+        """
+        self.output_filename = output_filename
+        self.array = array
+        self.geotransform = geotransform
+        self.projection = projection
+
+    def save_data(self):
+        """
+        Saves data into a local GeoTiff file
+        """
+        driver = gdal.GetDriverByName('GTiff')
+        driver_options = ["COMPRESS=LZW",
+                          "BIGTIFF=YES",
+                          "PREDICTOR=1",
+                          "TILED=YES",
+                          "BLOCKXSIZE=256",
+                          "BLOCKYSIZE=256",
+                          "INTERLEAVE=BAND"]
+
+        # Get GDAL datatype from NumPy datatype
+        dtype = gdal_array.NumericTypeCodeToGDALTypeCode(
+                    self.array.dtype)
+
+        # Create destination dataset
+        if len(self.array.shape) == 3:
+            # 3D array
+            bands, rows, cols = self.array.shape
+        else:
+            # 2D array
+            bands = 1
+            rows, cols = self.array.shape
+
+        dst_ds = driver.Create(self.output_filename, cols, rows,
+                               bands, dtype, driver_options)
+
+        # Set cartographic projection
+        dst_ds.SetProjection(self.projection)
+        dst_ds.SetGeoTransform(self.geotransform)
+
+        # Write bands
+        for band in range(bands):
+            dst_ds.GetRasterBand(band+1).WriteArray(self.array[band])
+
+        # Flush to disk
+        dst_ds = None
 
 class Input():
     """
-    Class to handle Input/Output operations
+    Class to handle input operations
     """
 
     def __init__(self, filename: str):
