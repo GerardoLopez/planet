@@ -129,8 +129,6 @@ class Calibration():
         2D or 3D GeoTiff file
         :param filename: Full path of file to save
         """
-        from IPython import embed ; ipshell = embed()
-
         output = Output(output_filename = filename,
                         array = self.calibrated_data,
                         geotransform = self.input_data.GeoTransform,
